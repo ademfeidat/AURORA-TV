@@ -16,6 +16,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.HorizontalScrollView;
+import android.widget.EditText;
+import android.text.TextWatcher;
+import android.text.Editable;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -216,21 +219,83 @@ public class MainActivity extends Activity {
     }
 
     private void showLibrary() {
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(20, 12, 20, 8);
+
+        EditText search = new EditText(this);
+        search.setSingleLine(true);
+        search.setTextColor(white);
+        search.setHintTextColor(0xFF9EABC5);
+        search.setHint("Search installed apps");
+        search.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
+        search.setBackground(panel(0xFF1B2943, 18));
+        search.setPadding(18, 12, 18, 12);
+        container.addView(search, new LinearLayout.LayoutParams(-1, -2));
+
         ScrollView scroll = new ScrollView(this);
-        LinearLayout list = new LinearLayout(this);
-        list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(28, 18, 28, 18);
-        for (ResolveInfo app : apps) {
-            TextView row = text("  " + app.loadLabel(getPackageManager()), 18, white, false);
-            row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(14, 15, 14, 15);
-            row.setFocusable(true);
-            row.setOnClickListener(v -> launch(app));
-            list.addView(row, new LinearLayout.LayoutParams(-1, -2));
-        }
-        scroll.addView(list);
-        new AlertDialog.Builder(this).setTitle("App Library").setView(scroll)
-                .setNegativeButton("Close", null).show();
+        LinearLayout results = new LinearLayout(this);
+        results.setOrientation(LinearLayout.VERTICAL);
+        results.setPadding(0, 12, 0, 8);
+        scroll.addView(results);
+        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-1, 0, 1);
+        sp.topMargin = 10;
+        container.addView(scroll, sp);
+
+        TextView count = text("", 12, 0xFF9EABC5, false);
+        count.setPadding(4, 8, 4, 0);
+        container.addView(count);
+
+        Runnable render = () -> {
+            String query = search.getText().toString().trim().toLowerCase(Locale.getDefault());
+            results.removeAllViews();
+            int shown = 0;
+            for (ResolveInfo app : apps) {
+                String label = app.loadLabel(getPackageManager()).toString();
+                if (!label.toLowerCase(Locale.getDefault()).contains(query)) continue;
+                LinearLayout row = new LinearLayout(this);
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                row.setPadding(12, 10, 12, 10);
+                row.setFocusable(true);
+                row.setBackground(panel(0xFF1B2943, 14));
+                android.widget.ImageView icon = new android.widget.ImageView(this);
+                icon.setImageDrawable(app.loadIcon(getPackageManager()));
+                row.addView(icon, new LinearLayout.LayoutParams(42, 42));
+                TextView name = text(label, 16, white, true);
+                name.setPadding(16, 0, 0, 0);
+                row.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
+                TextView open = text("OPEN", 11, 0xFFB8C9E8, true);
+                row.addView(open);
+                row.setOnClickListener(v -> launch(app));
+                row.setOnFocusChangeListener((v, focused) ->
+                        v.setBackground(panel(focused ? 0xFF3C5F96 : 0xFF1B2943, 14)));
+                LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(-1, 62);
+                rp.bottomMargin = 7;
+                results.addView(row, rp);
+                shown++;
+            }
+            count.setText(shown + " APPLICATIONS");
+            if (shown == 0) {
+                TextView empty = text("No apps match your search.", 15, 0xFFD1D9E8, false);
+                empty.setPadding(12, 20, 12, 20);
+                results.addView(empty);
+            }
+        };
+        render.run();
+        search.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int st, int before, int count) { render.run(); }
+            @Override public void afterTextChanged(Editable e) { }
+        });
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("App Library")
+                .setView(container)
+                .setNegativeButton("Close", null)
+                .create();
+        dialog.getWindow();
+        dialog.show();
+        search.requestFocus();
     }
 
     private void openSettings() {
