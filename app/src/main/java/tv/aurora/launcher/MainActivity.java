@@ -401,10 +401,7 @@ public class MainActivity extends Activity {
         nav.setPadding(0, 24, 0, 24);
         nav.addView(navAction("Watch Now", () -> buildHome()));
         nav.addView(navAction("Apps", () -> showLibrary()));
-        nav.addView(navAction("Favorites", () -> {
-            if (favorites.isEmpty()) new AlertDialog.Builder(this).setMessage("No favorites yet. Long-press an app to add it.").setPositiveButton("OK", null).show();
-            else showLibrary();
-        }));
+        nav.addView(navAction("Favorites", () -> showFavorites()));
         nav.addView(navAction("Profiles", () -> showProfiles()));
         nav.addView(navAction("Control Center", () -> showControlCenter()));
         root.addView(nav);
@@ -556,6 +553,69 @@ public class MainActivity extends Activity {
         try { startActivity(i); } catch (Exception ignored) { }
     }
 
+    private void showFavorites() {
+        List<ResolveInfo> saved = new ArrayList<>();
+        for (ResolveInfo app : apps) {
+            if (favorites.contains(app.activityInfo.packageName)) saved.add(app);
+        }
+        if (saved.isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Favorites")
+                    .setMessage("No favorites yet. In the Apps shelf or App Library, long-press an app to add it here.")
+                    .setPositiveButton("Open App Library", (d, w) -> showLibrary())
+                    .setNegativeButton("Close", null).show();
+            return;
+        }
+        ScrollView scroll = new ScrollView(this);
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(4);
+        grid.setPadding(12, 12, 12, 12);
+        scroll.addView(grid);
+        for (ResolveInfo app : saved) {
+            LinearLayout tile = new LinearLayout(this);
+            tile.setOrientation(LinearLayout.VERTICAL);
+            tile.setGravity(Gravity.CENTER);
+            tile.setFocusable(true);
+            tile.setClickable(true);
+            tile.setPadding(8, 10, 8, 8);
+            tile.setBackground(panel(0xFF1B2943, 16));
+            android.widget.ImageView icon = new android.widget.ImageView(this);
+            icon.setImageDrawable(app.loadIcon(getPackageManager()));
+            tile.addView(icon, new LinearLayout.LayoutParams(58, 58));
+            TextView name = text(app.loadLabel(getPackageManager()).toString(), 13, white, true);
+            name.setGravity(Gravity.CENTER);
+            name.setMaxLines(2);
+            name.setPadding(4, 6, 4, 0);
+            tile.addView(name, new LinearLayout.LayoutParams(-1, -2));
+            tile.setOnClickListener(v -> launch(app));
+            tile.setOnLongClickListener(v -> {
+                toggleFavorite(app);
+                return true;
+            });
+            tile.setOnKeyListener((v, keyCode, event) -> {
+                if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_INFO) {
+                    showAppDetails(app);
+                    return true;
+                }
+                return false;
+            });
+            tile.setOnFocusChangeListener((v, focused) -> {
+                v.animate().scaleX(focused ? 1.08f : 1f).scaleY(focused ? 1.08f : 1f).setDuration(120).start();
+                v.setBackground(panel(focused ? 0xFF3C5F96 : 0xFF1B2943, 16));
+            });
+            GridLayout.LayoutParams p = new GridLayout.LayoutParams();
+            p.width = 0;
+            p.height = 120;
+            p.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+            p.setMargins(6, 6, 6, 6);
+            grid.addView(tile, p);
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Favorites")
+                .setView(scroll).setNegativeButton("Close", null).create();
+        dialog.show();
+        if (grid.getChildCount() > 0) grid.getChildAt(0).requestFocus();
+    }
+
     private void showLibrary() {
         LinearLayout container = new LinearLayout(this);
         container.setOrientation(LinearLayout.VERTICAL);
@@ -608,6 +668,17 @@ public class MainActivity extends Activity {
                 name.setPadding(4, 6, 4, 0);
                 tile.addView(name, new LinearLayout.LayoutParams(-1, -2));
                 tile.setOnClickListener(v -> launch(app));
+                tile.setOnLongClickListener(v -> {
+                    toggleFavorite(app);
+                    return true;
+                });
+                tile.setOnKeyListener((v, keyCode, event) -> {
+                    if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_INFO) {
+                        showAppDetails(app);
+                        return true;
+                    }
+                    return false;
+                });
                 tile.setOnFocusChangeListener((v, focused) -> {
                     v.animate().scaleX(focused ? 1.08f : 1f).scaleY(focused ? 1.08f : 1f).setDuration(120).start();
                     v.setBackground(panel(focused ? 0xFF3C5F96 : 0xFF1B2943, 16));
