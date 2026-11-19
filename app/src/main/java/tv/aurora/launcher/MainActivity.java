@@ -330,12 +330,53 @@ public class MainActivity extends Activity {
         return tab;
     }
 
+    
+    private int[] themeColors() {
+        String theme = getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getString("theme_" + activeProfileId, "aurora");
+        if ("midnight".equals(theme)) return new int[]{0xFF080B14, 0xFF111827, 0xFF090D18, 0xFF1A2235};
+        if ("ocean".equals(theme)) return new int[]{0xFF061B2B, 0xFF0A3048, 0xFF071522, 0xFF123B56};
+        return new int[]{0xFF0F1F3D, 0xFF080D1B, 0xFF140C25, 0xFF233E70};
+    }
+
+    private void showThemePicker() {
+        String[] labels = {"Aurora", "Midnight", "Ocean"};
+        String[] values = {"aurora", "midnight", "ocean"};
+        String current = getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getString("theme_" + activeProfileId, "aurora");
+        int selected = 0;
+        for (int i = 0; i < values.length; i++) if (values[i].equals(current)) selected = i;
+        new AlertDialog.Builder(this).setTitle("Choose your theme")
+                .setSingleChoiceItems(labels, selected, (dialog, which) -> {
+                    getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                            .putString("theme_" + activeProfileId, values[which]).apply();
+                    dialog.dismiss();
+                    buildHome();
+                }).setNegativeButton("Close", null).show();
+    }
+
+    private void showAppDetails(ResolveInfo app) {
+        String name = app.loadLabel(getPackageManager()).toString();
+        String pkg = app.activityInfo.packageName;
+        new AlertDialog.Builder(this).setTitle(name)
+                .setMessage("Installed application\\n" + pkg)
+                .setPositiveButton("Open", (dialog, which) -> launch(app))
+                .setNeutralButton("App settings", (dialog, which) -> {
+                    try {
+                        Intent details = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        details.setData(android.net.Uri.parse("package:" + pkg));
+                        startActivity(details);
+                    } catch (Exception ignored) { }
+                }).setNegativeButton("Close", null).show();
+    }
+
     private void buildHome() {
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(68, 30, 68, 42);
+        int[] selectedTheme = themeColors();
         root.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{Color.rgb(15, 31, 61), Color.rgb(8, 13, 27), Color.rgb(20, 12, 37)}));
+                new int[]{selectedTheme[0], selectedTheme[1], selectedTheme[2]}));
         setContentView(root);
 
         LinearLayout top = new LinearLayout(this);
@@ -373,7 +414,7 @@ public class MainActivity extends Activity {
         hero.setGravity(Gravity.CENTER_VERTICAL);
         hero.setPadding(54, 34, 54, 34);
         hero.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
-                new int[]{0xFF233E70, 0xFF182849, 0xFF111A30}));
+                new int[]{selectedTheme[3], selectedTheme[3], selectedTheme[1]}));
         TextView eyebrow = text("AURORA ORIGINALS   •   FEATURED", 13, 0xFFB8C9E8, true);
         eyebrow.setLetterSpacing(0.15f);
         hero.addView(eyebrow);
@@ -485,6 +526,13 @@ public class MainActivity extends Activity {
         np.topMargin = 7;
         card.addView(name, np);
         card.setOnClickListener(v -> launch(app));
+        card.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_INFO) {
+                showAppDetails(app);
+                return true;
+            }
+            return false;
+        });
         card.setOnLongClickListener(v -> {
             toggleFavorite(app);
             return true;
@@ -677,6 +725,12 @@ public class MainActivity extends Activity {
                         .setMessage("AURORA TV 0.5.0\nAn independent Android TV launcher project.")
                         .setPositiveButton("OK", null).show()));
         panelView.addView(rowFour);
+
+        LinearLayout rowFive = new LinearLayout(this);
+        rowFive.setOrientation(LinearLayout.HORIZONTAL);
+        rowFive.addView(controlItem("Appearance", "Choose this profile's background theme",
+                () -> showThemePicker()));
+        panelView.addView(rowFive);
 
         AlertDialog dialog = new AlertDialog.Builder(this).setView(panelView)
                 .setNegativeButton("Close", null).create();
