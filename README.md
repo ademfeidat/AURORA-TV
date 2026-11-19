@@ -36,10 +36,12 @@ AURORA TV is an independent Android launcher project focused on a polished, cine
 - Native Android application registered as a HOME / LEANBACK launcher.
 - Discovers installed Leanback and standard launchable apps, including Android 11+ package-visibility declarations.
 - Remote-friendly focus navigation, app launching and animated focus feedback.
-- App Library with live search and a four-column TV grid.
+- App Library with live search and a four-column TV grid, reachable from the Search navigation item and the remote Search key.
+- Dedicated Favorites screen with long-press management and INFO-key app details.
+- Per-profile Aurora, Midnight and Ocean appearance themes.
 - Per-profile favourites, profile creation, switching and deletion.
 - Per-profile Continue row that restores the last launched app when it is still installed.
-- Quick Control Center shortcuts for Network, Bluetooth, Display, Sound, Profiles, App Library and refresh.
+- Quick Control Center shortcuts for Network, Bluetooth, Display, Sound, Profiles, Search, Appearance and refresh.
 - Idle clock screensaver with manual preview and remote/click dismissal.
 - GitHub Actions debug APK build.
 
