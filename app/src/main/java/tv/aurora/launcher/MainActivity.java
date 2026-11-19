@@ -401,6 +401,7 @@ public class MainActivity extends Activity {
         nav.setPadding(0, 24, 0, 24);
         nav.addView(navAction("Watch Now", () -> buildHome()));
         nav.addView(navAction("Apps", () -> showLibrary()));
+        nav.addView(navAction("Search", () -> showLibrary()));
         nav.addView(navAction("Favorites", () -> showFavorites()));
         nav.addView(navAction("Profiles", () -> showProfiles()));
         nav.addView(navAction("Control Center", () -> showControlCenter()));
@@ -782,7 +783,7 @@ public class MainActivity extends Activity {
         LinearLayout rowThree = new LinearLayout(this);
         rowThree.setOrientation(LinearLayout.HORIZONTAL);
         rowThree.addView(controlItem("Profiles", "Switch or create a profile", () -> showProfiles()));
-        rowThree.addView(controlItem("App Library", "Find and launch installed apps", () -> showLibrary()));
+        rowThree.addView(controlItem("Search", "Find an installed app by name", () -> showLibrary()));
         panelView.addView(rowThree);
 
         LinearLayout rowFour = new LinearLayout(this);
@@ -816,6 +817,10 @@ public class MainActivity extends Activity {
     }
 
     @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_SEARCH) {
+            showLibrary();
+            return true;
+        }
         if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_SETTINGS) {
             showControlCenter();
             return true;
