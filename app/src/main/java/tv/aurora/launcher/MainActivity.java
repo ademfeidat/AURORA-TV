@@ -2,6 +2,7 @@ package tv.aurora.launcher;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -46,6 +47,8 @@ public class MainActivity extends Activity {
     private LinearLayout rail;
     private TextView clock;
     private final Handler handler = new Handler();
+    private Dialog screensaverDialog;
+    private final Runnable screensaverTask = this::showScreensaver;
     private final Runnable ticker = new Runnable() {
         @Override public void run() {
             if (clock != null) clock.setText(new SimpleDateFormat("EEE, d MMM   •   HH:mm", Locale.getDefault()).format(new Date()));
@@ -62,11 +65,77 @@ public class MainActivity extends Activity {
         loadApps();
         buildHome();
         handler.post(ticker);
+        resetScreensaverTimer();
     }
 
     @Override protected void onDestroy() {
         handler.removeCallbacks(ticker);
+        handler.removeCallbacks(screensaverTask);
+        if (screensaverDialog != null && screensaverDialog.isShowing()) screensaverDialog.dismiss();
         super.onDestroy();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        resetScreensaverTimer();
+    }
+
+    @Override protected void onPause() {
+        handler.removeCallbacks(screensaverTask);
+        if (screensaverDialog != null && screensaverDialog.isShowing()) screensaverDialog.dismiss();
+        super.onPause();
+    }
+
+    private void resetScreensaverTimer() {
+        handler.removeCallbacks(screensaverTask);
+        if (!isFinishing()) handler.postDelayed(screensaverTask, 120000);
+    }
+
+    private void showScreensaver() {
+        if (isFinishing() || isDestroyed() || (screensaverDialog != null && screensaverDialog.isShowing())) return;
+        LinearLayout view = new LinearLayout(this);
+        view.setOrientation(LinearLayout.VERTICAL);
+        view.setGravity(Gravity.CENTER);
+        view.setPadding(40, 40, 40, 40);
+        view.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{0xFF101D38, 0xFF080D1B, 0xFF21152F}));
+        TextView logo = text("A U R O R A", 18, 0xFFB8C9E8, true);
+        logo.setLetterSpacing(0.28f);
+        view.addView(logo);
+        TextView time = text(new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()),
+                76, white, false);
+        time.setPadding(0, 18, 0, 4);
+        view.addView(time);
+        TextView date = text(new SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(new Date()),
+                17, 0xFFCFD8EA, false);
+        view.addView(date);
+        TextView hint = text("Press any button to continue", 13, 0xFF899AB8, false);
+        hint.setPadding(0, 36, 0, 0);
+        view.addView(hint);
+        screensaverDialog = new Dialog(this);
+        screensaverDialog.setContentView(view);
+        screensaverDialog.setCancelable(false);
+        screensaverDialog.show();
+        if (screensaverDialog.getWindow() != null) {
+            screensaverDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            screensaverDialog.getWindow().setLayout(-1, -1);
+            WindowManager.LayoutParams lp = screensaverDialog.getWindow().getAttributes();
+            lp.dimAmount = 0f;
+            screensaverDialog.getWindow().setAttributes(lp);
+        }
+    }
+
+    @Override public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (screensaverDialog != null && screensaverDialog.isShowing()) {
+                screensaverDialog.dismiss();
+                screensaverDialog = null;
+                resetScreensaverTimer();
+                return true;
+            }
+            resetScreensaverTimer();
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     private void initializeProfiles() {
@@ -535,6 +604,8 @@ public class MainActivity extends Activity {
         rowFour.setOrientation(LinearLayout.HORIZONTAL);
         rowFour.addView(controlItem("Refresh apps", "Rescan installed applications",
                 () -> { loadApps(); buildHome(); }));
+        rowFour.addView(controlItem("Screen Saver", "Preview the idle display",
+                () -> showScreensaver()));
         rowFour.addView(controlItem("About AURORA", "Version 0.5.0 · Independent project",
                 () -> new AlertDialog.Builder(this)
                         .setMessage("AURORA TV 0.5.0\nAn independent Android TV launcher project.")
