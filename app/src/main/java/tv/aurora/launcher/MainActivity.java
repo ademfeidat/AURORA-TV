@@ -473,16 +473,89 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void openSystemSettings(String action) {
+        try { startActivity(new Intent(action)); }
+        catch (Exception e) { openSettings(); }
+    }
+
+    private TextView controlItem(String title, String subtitle, Runnable action) {
+        LinearLayout item = new LinearLayout(this);
+        item.setOrientation(LinearLayout.VERTICAL);
+        item.setPadding(18, 13, 18, 13);
+        item.setFocusable(true);
+        item.setClickable(true);
+        item.setBackground(panel(0xFF1B2943, 18));
+        item.addView(text(title, 16, white, true));
+        TextView detail = text(subtitle, 12, 0xFFB8C7DF, false);
+        detail.setPadding(0, 4, 0, 0);
+        item.addView(detail);
+        item.setOnClickListener(v -> action.run());
+        item.setOnFocusChangeListener((v, focused) -> {
+            v.animate().scaleX(focused ? 1.035f : 1f).scaleY(focused ? 1.035f : 1f).setDuration(110).start();
+            v.setBackground(panel(focused ? 0xFF3C5F96 : 0xFF1B2943, 18));
+        });
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -2, 1f);
+        p.setMargins(6, 6, 6, 6);
+        item.setLayoutParams(p);
+        return item;
+    }
+
+    private void showControlCenter() {
+        LinearLayout panelView = new LinearLayout(this);
+        panelView.setOrientation(LinearLayout.VERTICAL);
+        panelView.setPadding(14, 10, 14, 8);
+        panelView.setBackground(panel(0xFF101B30, 22));
+        TextView heading = text("Quick Controls", 21, white, true);
+        heading.setPadding(10, 4, 10, 12);
+        panelView.addView(heading);
+
+        LinearLayout rowOne = new LinearLayout(this);
+        rowOne.setOrientation(LinearLayout.HORIZONTAL);
+        rowOne.addView(controlItem("Network", "Wi-Fi and internet settings",
+                () -> openSystemSettings(android.provider.Settings.ACTION_WIFI_SETTINGS)));
+        rowOne.addView(controlItem("Bluetooth", "Connected devices and accessories",
+                () -> openSystemSettings(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)));
+        panelView.addView(rowOne);
+
+        LinearLayout rowTwo = new LinearLayout(this);
+        rowTwo.setOrientation(LinearLayout.HORIZONTAL);
+        rowTwo.addView(controlItem("Display", "Screen and display preferences",
+                () -> openSystemSettings(android.provider.Settings.ACTION_DISPLAY_SETTINGS)));
+        rowTwo.addView(controlItem("Sound", "Audio and volume settings",
+                () -> openSystemSettings(android.provider.Settings.ACTION_SOUND_SETTINGS)));
+        panelView.addView(rowTwo);
+
+        LinearLayout rowThree = new LinearLayout(this);
+        rowThree.setOrientation(LinearLayout.HORIZONTAL);
+        rowThree.addView(controlItem("Profiles", "Switch or create a profile", () -> showProfiles()));
+        rowThree.addView(controlItem("App Library", "Find and launch installed apps", () -> showLibrary()));
+        panelView.addView(rowThree);
+
+        LinearLayout rowFour = new LinearLayout(this);
+        rowFour.setOrientation(LinearLayout.HORIZONTAL);
+        rowFour.addView(controlItem("Refresh apps", "Rescan installed applications",
+                () -> { loadApps(); buildHome(); }));
+        rowFour.addView(controlItem("About AURORA", "Version 0.5.0 · Independent project",
+                () -> new AlertDialog.Builder(this)
+                        .setMessage("AURORA TV 0.5.0\nAn independent Android TV launcher project.")
+                        .setPositiveButton("OK", null).show()));
+        panelView.addView(rowFour);
+
+        AlertDialog dialog = new AlertDialog.Builder(this).setView(panelView)
+                .setNegativeButton("Close", null).create();
+        dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.78f),
+                    WindowManager.LayoutParams.WRAP_CONTENT);
+        }
+        rowOne.getChildAt(0).requestFocus();
+    }
+
     @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_MENU) {
-            new AlertDialog.Builder(this).setTitle("AURORA Control Center")
-                    .setItems(new String[]{"Android Settings", "Refresh applications", "About AURORA TV"},
-                            (d, which) -> {
-                                if (which == 0) openSettings();
-                                else if (which == 1) { loadApps(); buildHome(); }
-                                else new AlertDialog.Builder(this).setMessage("AURORA TV 0.5.0\nIndependent Android TV launcher.")
-                                        .setPositiveButton("OK", null).show();
-                            }).show();
+        if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_SETTINGS) {
+            showControlCenter();
             return true;
         }
         return super.onKeyDown(keyCode, event);
