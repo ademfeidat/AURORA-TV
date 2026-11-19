@@ -319,12 +319,14 @@ public class MainActivity extends Activity {
         TextView tab = text(label, 17, 0xFFCFD8EA, true);
         tab.setFocusable(true);
         tab.setClickable(true);
-        tab.setPadding(18, 12, 18, 12);
+        tab.setPadding(22, 14, 22, 14);
+        tab.setElevation(3f);
         tab.setBackground(panel(0x001B2943, 24));
         tab.setOnClickListener(v -> action.run());
         tab.setOnFocusChangeListener((v, focused) -> {
             tab.setTextColor(focused ? white : 0xFF9EABC5);
-            tab.setBackground(panel(focused ? 0xFF344D75 : 0x001B2943, 24));
+            tab.setBackground(panel(focused ? 0xFF527DB8 : 0x332B3D5B, 28));
+            tab.setElevation(focused ? 10f : 2f);
             tab.animate().scaleX(focused ? 1.06f : 1f).scaleY(focused ? 1.06f : 1f).setDuration(130).start();
         });
         return tab;
@@ -410,7 +412,7 @@ public class MainActivity extends Activity {
     private void buildHome() {
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(68, 30, 68, 42);
+        root.setPadding(72, 34, 72, 42);
         int[] selectedTheme = themeColors();
         root.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 new int[]{selectedTheme[0], selectedTheme[1], selectedTheme[2]}));
@@ -435,7 +437,7 @@ public class MainActivity extends Activity {
 
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
-        nav.setPadding(0, 24, 0, 24);
+        nav.setPadding(0, 26, 0, 28);
         nav.addView(navAction("Watch Now", () -> buildHome()));
         nav.addView(navAction("Apps", () -> showLibrary()));
         nav.addView(navAction("Search", () -> showLibrary()));
@@ -447,16 +449,19 @@ public class MainActivity extends Activity {
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setGravity(Gravity.CENTER_VERTICAL);
-        hero.setPadding(54, 34, 54, 34);
-        hero.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
-                new int[]{selectedTheme[3], selectedTheme[3], selectedTheme[1]}));
-        TextView eyebrow = text("AURORA ORIGINALS   •   FEATURED", 13, 0xFFB8C9E8, true);
+        hero.setPadding(62, 42, 62, 42);
+        hero.setElevation(18f);
+        GradientDrawable heroSurface = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{0xFF526F9E, selectedTheme[3], selectedTheme[1], 0xFF090F20});
+        heroSurface.setCornerRadius(34f);
+        hero.setBackground(heroSurface);
+        TextView eyebrow = text("  AURORA TV  •  FEATURED", 14, 0xFFE0E9FA, true);
         eyebrow.setLetterSpacing(0.15f);
         hero.addView(eyebrow);
         TextView headline = text("The best of entertainment.\nAll in one place.", 36, white, true);
         headline.setPadding(0, 14, 0, 10);
         hero.addView(headline);
-        TextView sub = text("Your movies, shows and favorite apps — ready when you are.", 17, 0xFFD1D9E8, false);
+        TextView sub = text("Discover something great to watch.", 19, 0xFFE0E7F3, false);
         hero.addView(sub);
         LinearLayout heroActions = new LinearLayout(this);
         heroActions.setOrientation(LinearLayout.HORIZONTAL);
@@ -464,14 +469,15 @@ public class MainActivity extends Activity {
         heroActions.addView(action("▶  Open App Library", () -> showLibrary()));
         heroActions.addView(action("Profiles", () -> showProfiles()));
         hero.addView(heroActions);
-        LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(-1, 238);
-        hp.bottomMargin = 24;
+        LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(-1, 278);
+        hp.bottomMargin = 30;
         root.addView(hero, hp);
 
         List<ResolveInfo> recentApps = recentApps();
         if (!recentApps.isEmpty()) {
             TextView continueLabel = text("Continue Watching", 20, 0xFFF2F5FC, true);
-            continueLabel.setLetterSpacing(0.14f);
+            continueLabel.setLetterSpacing(0.02f);
+            continueLabel.setPadding(4, 4, 0, 0);
             root.addView(continueLabel);
             HorizontalScrollView continueScroll = new HorizontalScrollView(this);
             continueScroll.setHorizontalScrollBarEnabled(false);
@@ -485,7 +491,8 @@ public class MainActivity extends Activity {
 
         if (!favorites.isEmpty()) {
             TextView favoriteLabel = text("Favorites", 20, 0xFFF2F5FC, true);
-            favoriteLabel.setLetterSpacing(0.14f);
+            favoriteLabel.setLetterSpacing(0.02f);
+            favoriteLabel.setPadding(4, 4, 0, 0);
             root.addView(favoriteLabel);
             HorizontalScrollView favoriteScroll = new HorizontalScrollView(this);
             favoriteScroll.setHorizontalScrollBarEnabled(false);
@@ -500,7 +507,8 @@ public class MainActivity extends Activity {
         }
 
         TextView label = text("Your Apps", 20, 0xFFF2F5FC, true);
-        label.setLetterSpacing(0.14f);
+        label.setLetterSpacing(0.02f);
+        label.setPadding(4, 4, 0, 0);
         root.addView(label);
 
         HorizontalScrollView hsv = new HorizontalScrollView(this);
@@ -547,6 +555,7 @@ public class MainActivity extends Activity {
         card.setGravity(Gravity.CENTER);
         card.setFocusable(true);
         card.setPadding(14, 12, 14, 10);
+        card.setElevation(4f);
         card.setBackground(panel(0xFF202E49, 24));
         android.graphics.drawable.Drawable icon = app.loadIcon(getPackageManager());
         android.widget.ImageView image = new android.widget.ImageView(this);
