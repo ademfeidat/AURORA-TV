@@ -355,6 +355,16 @@ public class MainActivity extends Activity {
                 }).setNegativeButton("Close", null).show();
     }
 
+
+    private void showDialogRestoringFocus(AlertDialog dialog, View fallback) {
+        View previousFocus = getCurrentFocus();
+        dialog.setOnDismissListener(d -> {
+            View target = previousFocus != null && previousFocus.isShown() ? previousFocus : fallback;
+            if (target != null && target.isShown()) target.requestFocus();
+        });
+        dialog.show();
+    }
+
     private void showAppDetails(ResolveInfo app) {
         String name = app.loadLabel(getPackageManager()).toString();
         String pkg = app.activityInfo.packageName;
@@ -640,7 +650,7 @@ public class MainActivity extends Activity {
         }
         AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Favorites")
                 .setView(scroll).setNegativeButton("Close", null).create();
-        dialog.show();
+        showDialogRestoringFocus(dialog, rail);
         if (grid.getChildCount() > 0) grid.getChildAt(0).requestFocus();
     }
 
@@ -743,7 +753,7 @@ public class MainActivity extends Activity {
                 .setNegativeButton("Close", null)
                 .create();
         dialog.getWindow();
-        dialog.show();
+        showDialogRestoringFocus(dialog, rail);
         search.requestFocus();
     }
 
@@ -833,7 +843,7 @@ public class MainActivity extends Activity {
 
         AlertDialog dialog = new AlertDialog.Builder(this).setView(panelView)
                 .setNegativeButton("Close", null).create();
-        dialog.show();
+        showDialogRestoringFocus(dialog, rail);
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             dialog.getWindow().setLayout(
