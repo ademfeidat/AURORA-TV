@@ -31,25 +31,23 @@ AURORA TV is an independent Android launcher project focused on a polished, cine
 
 > These images are design concepts for the intended experience, not screenshots captured from a running device. The current app implementation is earlier and more limited; see the status below.
 
-## Implemented in the current baseline
+## Implemented
 
 - Native Android application registered as a HOME / LEANBACK launcher.
-- Minimum SDK 21 (Android 5.0).
-- Discovers installed Leanback and standard launchable applications.
-- D-pad / keyboard focus navigation and OK/Enter app launching.
-- Horizontal app row with focus feedback.
-- App Library dialog.
-- Refresh installed apps and open Android Settings.
-- GitHub Actions debug build workflow; the latest build completed successfully and published the `aurora-tv-debug-apk` artifact.
+- Discovers installed Leanback and standard launchable apps, including Android 11+ package-visibility declarations.
+- Remote-friendly focus navigation, app launching and animated focus feedback.
+- App Library with live search and a four-column TV grid.
+- Per-profile favourites, profile creation, switching and deletion.
+- Per-profile Continue row that restores the last launched app when it is still installed.
+- Quick Control Center shortcuts for Network, Bluetooth, Display, Sound, Profiles, App Library and refresh.
+- Idle clock screensaver with manual preview and remote/click dismissal.
+- GitHub Actions debug APK build.
 
-## In development
+## Remaining work
 
-- A more complete tvOS-inspired home layout and navigation.
-- Search and a full multi-row application library.
-- Persistent favourites, profiles and personalization.
-- A functional launcher Control Center using supported Android settings intents.
-- Idle screensaver, wallpaper options and polish.
-- Device-by-device compatibility and accessibility testing.
+- TV-device testing for D-pad focus order, Home-key behavior, default launcher selection and manufacturer-specific settings.
+- Visual refinement, real device screenshots and accessibility checks.
+- More complete profile-level personalization and additional tvOS-inspired interaction details.
 
 ## Build
 
