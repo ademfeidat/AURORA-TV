@@ -39,6 +39,7 @@ AURORA TV is an independent Android launcher project focused on a polished, cine
 - App Library with live search and a four-column TV grid, reachable from the Search navigation item and the remote Search key.
 - Dedicated Favorites screen with long-press management.
 - App details panel with the original app icon, package name, version/build metadata, launch action and Android app-settings shortcut; open it with the remote INFO key.
+- Restores remote focus to the previously selected control after closing the App Library, Favorites and Control Center dialogs.
 - Per-profile Aurora, Midnight and Ocean appearance themes.
 - Per-profile favourites, profile creation, switching and deletion.
 - Per-profile Continue row that restores the last launched app when it is still installed.
