@@ -74,7 +74,9 @@ public class MainActivity extends Activity {
         Set<String> ids = new HashSet<>(p.getStringSet(PROFILES_KEY, new HashSet<>()));
         if (ids.isEmpty()) {
             ids.add("guest");
+            Set<String> legacyFavorites = new HashSet<>(p.getStringSet("favorites", new HashSet<>()));
             p.edit().putStringSet(PROFILES_KEY, ids).putString("profile_name_guest", "Guest")
+                    .putStringSet("favorites_guest", legacyFavorites)
                     .putString(ACTIVE_PROFILE_KEY, "guest").apply();
         }
         activeProfileId = p.getString(ACTIVE_PROFILE_KEY, ids.iterator().next());
@@ -155,14 +157,19 @@ public class MainActivity extends Activity {
                     .setPositiveButton("OK", null).show();
             return;
         }
-        String removed = activeProfileId;
-        ids.remove(removed);
-        String next = ids.iterator().next();
-        p.edit().putStringSet(PROFILES_KEY, ids).putString(ACTIVE_PROFILE_KEY, next)
-                .remove("profile_name_" + removed).remove("favorites_" + removed).apply();
-        activeProfileId = next;
-        loadFavorites();
-        buildHome();
+        new AlertDialog.Builder(this).setTitle("Delete " + profileName(activeProfileId) + "?")
+                .setMessage("This removes this profile and its saved favorites from this device.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    String removed = activeProfileId;
+                    ids.remove(removed);
+                    String next = ids.iterator().next();
+                    p.edit().putStringSet(PROFILES_KEY, ids).putString(ACTIVE_PROFILE_KEY, next)
+                            .remove("profile_name_" + removed).remove("favorites_" + removed).apply();
+                    activeProfileId = next;
+                    loadFavorites();
+                    buildHome();
+                }).show();
     }
 
     private void toggleFavorite(ResolveInfo app) {
