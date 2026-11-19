@@ -358,15 +358,42 @@ public class MainActivity extends Activity {
     private void showAppDetails(ResolveInfo app) {
         String name = app.loadLabel(getPackageManager()).toString();
         String pkg = app.activityInfo.packageName;
-        new AlertDialog.Builder(this).setTitle(name)
-                .setMessage("Installed application\\n" + pkg)
+        String version = "Version information unavailable";
+        try {
+            android.content.pm.PackageInfo info = getPackageManager().getPackageInfo(pkg, 0);
+            version = "Version " + (info.versionName == null ? "Unknown" : info.versionName)
+                    + "  ·  Build " + info.versionCode;
+        } catch (PackageManager.NameNotFoundException ignored) { }
+
+        LinearLayout detailsView = new LinearLayout(this);
+        detailsView.setOrientation(LinearLayout.HORIZONTAL);
+        detailsView.setGravity(Gravity.CENTER_VERTICAL);
+        detailsView.setPadding(8, 12, 8, 8);
+
+        android.widget.ImageView appIcon = new android.widget.ImageView(this);
+        appIcon.setImageDrawable(app.loadIcon(getPackageManager()));
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(76, 76);
+        iconParams.rightMargin = 18;
+        detailsView.addView(appIcon, iconParams);
+
+        LinearLayout metadata = new LinearLayout(this);
+        metadata.setOrientation(LinearLayout.VERTICAL);
+        TextView packageName = text(pkg, 14, white, true);
+        packageName.setMaxLines(2);
+        metadata.addView(packageName);
+        TextView versionText = text(version, 12, 0xFFB8C7DF, false);
+        versionText.setPadding(0, 8, 0, 0);
+        metadata.addView(versionText);
+        detailsView.addView(metadata, new LinearLayout.LayoutParams(0, -2, 1f));
+
+        new AlertDialog.Builder(this).setTitle(name).setView(detailsView)
                 .setPositiveButton("Open", (dialog, which) -> launch(app))
                 .setNeutralButton("App settings", (dialog, which) -> {
                     try {
                         Intent details = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                         details.setData(android.net.Uri.parse("package:" + pkg));
                         startActivity(details);
-                    } catch (Exception ignored) { }
+                    } catch (Exception ignored) { openSettings(); }
                 }).setNegativeButton("Close", null).show();
     }
 
