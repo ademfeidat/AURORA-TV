@@ -547,7 +547,7 @@ public class MainActivity extends Activity {
         catch (Exception e) { openSettings(); }
     }
 
-    private TextView controlItem(String title, String subtitle, Runnable action) {
+    private LinearLayout controlItem(String title, String subtitle, Runnable action) {
         LinearLayout item = new LinearLayout(this);
         item.setOrientation(LinearLayout.VERTICAL);
         item.setPadding(18, 13, 18, 13);
