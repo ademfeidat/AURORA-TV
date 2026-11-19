@@ -27,12 +27,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
     private final int bg = Color.rgb(8, 13, 27);
     private final int white = Color.WHITE;
     private final List<ResolveInfo> apps = new ArrayList<>();
+    private final Set<String> favorites = new HashSet<>();
     private LinearLayout root;
     private LinearLayout rail;
     private TextView clock;
@@ -48,6 +51,7 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().setNavigationBarColor(bg);
+        loadFavorites();
         loadApps();
         buildHome();
         handler.post(ticker);
@@ -56,6 +60,30 @@ public class MainActivity extends Activity {
     @Override protected void onDestroy() {
         handler.removeCallbacks(ticker);
         super.onDestroy();
+    }
+
+    private void loadFavorites() {
+        favorites.clear();
+        favorites.addAll(getSharedPreferences("aurora_launcher", MODE_PRIVATE)
+                .getStringSet("favorites", new HashSet<>()));
+    }
+
+    private void saveFavorites() {
+        getSharedPreferences("aurora_launcher", MODE_PRIVATE).edit()
+                .putStringSet("favorites", new HashSet<>(favorites)).apply();
+    }
+
+    private void toggleFavorite(ResolveInfo app) {
+        String pkg = app.activityInfo.packageName;
+        if (favorites.contains(pkg)) {
+            favorites.remove(pkg);
+            android.widget.Toast.makeText(this, "Removed from Favorites", android.widget.Toast.LENGTH_SHORT).show();
+        } else {
+            favorites.add(pkg);
+            android.widget.Toast.makeText(this, "Added to Favorites", android.widget.Toast.LENGTH_SHORT).show();
+        }
+        saveFavorites();
+        buildHome();
     }
 
     private void loadApps() {
@@ -141,6 +169,22 @@ public class MainActivity extends Activity {
         hp.bottomMargin = 24;
         root.addView(hero, hp);
 
+        if (!favorites.isEmpty()) {
+            TextView favoriteLabel = text("FAVORITES", 14, 0xFFB9C7DF, true);
+            favoriteLabel.setLetterSpacing(0.14f);
+            root.addView(favoriteLabel);
+            HorizontalScrollView favoriteScroll = new HorizontalScrollView(this);
+            favoriteScroll.setHorizontalScrollBarEnabled(false);
+            LinearLayout favoriteRail = new LinearLayout(this);
+            favoriteRail.setOrientation(LinearLayout.HORIZONTAL);
+            favoriteRail.setPadding(0, 14, 0, 14);
+            for (ResolveInfo app : apps) {
+                if (favorites.contains(app.activityInfo.packageName)) favoriteRail.addView(appCard(app));
+            }
+            favoriteScroll.addView(favoriteRail);
+            root.addView(favoriteScroll, new LinearLayout.LayoutParams(-1, 145));
+        }
+
         TextView label = text("YOUR APPS", 14, 0xFFB9C7DF, true);
         label.setLetterSpacing(0.14f);
         root.addView(label);
@@ -201,6 +245,10 @@ public class MainActivity extends Activity {
         np.topMargin = 7;
         card.addView(name, np);
         card.setOnClickListener(v -> launch(app));
+        card.setOnLongClickListener(v -> {
+            toggleFavorite(app);
+            return true;
+        });
         card.setOnFocusChangeListener((v, focused) -> {
             v.animate().scaleX(focused ? 1.12f : 1f).scaleY(focused ? 1.12f : 1f).setDuration(140).start();
             v.setBackground(panel(focused ? 0xFF3C5F96 : 0xFF1B2943, 18));
@@ -215,6 +263,8 @@ public class MainActivity extends Activity {
         Intent i = new Intent(Intent.ACTION_MAIN);
         i.setClassName(app.activityInfo.packageName, app.activityInfo.name);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        getSharedPreferences("aurora_launcher", MODE_PRIVATE).edit()
+                .putString("last_opened_package", app.activityInfo.packageName).apply();
         try { startActivity(i); } catch (Exception ignored) { }
     }
 
