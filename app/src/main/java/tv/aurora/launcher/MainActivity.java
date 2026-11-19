@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.HorizontalScrollView;
+import android.widget.GridLayout;
 import android.widget.EditText;
 import android.text.TextWatcher;
 import android.text.Editable;
@@ -284,8 +285,9 @@ public class MainActivity extends Activity {
         container.addView(search, new LinearLayout.LayoutParams(-1, -2));
 
         ScrollView scroll = new ScrollView(this);
-        LinearLayout results = new LinearLayout(this);
-        results.setOrientation(LinearLayout.VERTICAL);
+        GridLayout results = new GridLayout(this);
+        results.setColumnCount(4);
+        results.setUseDefaultMargins(false);
         results.setPadding(0, 12, 0, 8);
         scroll.addView(results);
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-1, 0, 1);
@@ -303,32 +305,43 @@ public class MainActivity extends Activity {
             for (ResolveInfo app : apps) {
                 String label = app.loadLabel(getPackageManager()).toString();
                 if (!label.toLowerCase(Locale.getDefault()).contains(query)) continue;
-                LinearLayout row = new LinearLayout(this);
-                row.setGravity(Gravity.CENTER_VERTICAL);
-                row.setPadding(12, 10, 12, 10);
-                row.setFocusable(true);
-                row.setBackground(panel(0xFF1B2943, 14));
+                LinearLayout tile = new LinearLayout(this);
+                tile.setOrientation(LinearLayout.VERTICAL);
+                tile.setGravity(Gravity.CENTER);
+                tile.setPadding(8, 10, 8, 8);
+                tile.setFocusable(true);
+                tile.setClickable(true);
+                tile.setBackground(panel(0xFF1B2943, 16));
                 android.widget.ImageView icon = new android.widget.ImageView(this);
                 icon.setImageDrawable(app.loadIcon(getPackageManager()));
-                row.addView(icon, new LinearLayout.LayoutParams(42, 42));
-                TextView name = text(label, 16, white, true);
-                name.setPadding(16, 0, 0, 0);
-                row.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
-                TextView open = text("OPEN", 11, 0xFFB8C9E8, true);
-                row.addView(open);
-                row.setOnClickListener(v -> launch(app));
-                row.setOnFocusChangeListener((v, focused) ->
-                        v.setBackground(panel(focused ? 0xFF3C5F96 : 0xFF1B2943, 14)));
-                LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(-1, 62);
-                rp.bottomMargin = 7;
-                results.addView(row, rp);
+                tile.addView(icon, new LinearLayout.LayoutParams(54, 54));
+                TextView name = text(label, 13, white, true);
+                name.setGravity(Gravity.CENTER);
+                name.setMaxLines(2);
+                name.setPadding(4, 6, 4, 0);
+                tile.addView(name, new LinearLayout.LayoutParams(-1, -2));
+                tile.setOnClickListener(v -> launch(app));
+                tile.setOnFocusChangeListener((v, focused) -> {
+                    v.animate().scaleX(focused ? 1.08f : 1f).scaleY(focused ? 1.08f : 1f).setDuration(120).start();
+                    v.setBackground(panel(focused ? 0xFF3C5F96 : 0xFF1B2943, 16));
+                });
+                GridLayout.LayoutParams tp = new GridLayout.LayoutParams();
+                tp.width = 0;
+                tp.height = 112;
+                tp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+                tp.setMargins(6, 6, 6, 6);
+                results.addView(tile, tp);
                 shown++;
             }
             count.setText(shown + " APPLICATIONS");
             if (shown == 0) {
                 TextView empty = text("No apps match your search.", 15, 0xFFD1D9E8, false);
                 empty.setPadding(12, 20, 12, 20);
-                results.addView(empty);
+                GridLayout.LayoutParams ep = new GridLayout.LayoutParams();
+                ep.width = -1;
+                ep.height = -2;
+                ep.columnSpec = GridLayout.spec(0, 4);
+                results.addView(empty, ep);
             }
         };
         render.run();
