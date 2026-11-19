@@ -255,6 +255,7 @@ public class MainActivity extends Activity {
     }
 
     private void loadApps() {
+        apps.clear();
         PackageManager pm = getPackageManager();
         Intent leanback = new Intent(Intent.ACTION_MAIN);
         leanback.addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
@@ -290,6 +291,25 @@ public class MainActivity extends Activity {
         return t;
     }
 
+    private ResolveInfo findApp(String packageName) {
+        if (packageName == null) return null;
+        for (ResolveInfo app : apps) {
+            if (packageName.equals(app.activityInfo.packageName)) return app;
+        }
+        return null;
+    }
+
+    private TextView navAction(String label, Runnable action) {
+        TextView tab = text(label, 15, 0xFFCFD8EA, true);
+        tab.setFocusable(true);
+        tab.setClickable(true);
+        tab.setPadding(0, 8, 26, 8);
+        tab.setOnClickListener(v -> action.run());
+        tab.setOnFocusChangeListener((v, focused) ->
+                tab.setTextColor(focused ? white : 0xFF9EABC5));
+        return tab;
+    }
+
     private void buildHome() {
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -318,11 +338,10 @@ public class MainActivity extends Activity {
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setPadding(0, 34, 0, 22);
-        for (String item : new String[]{"Home", "Movies", "TV Shows", "Apps"}) {
-            TextView tab = text(item, 16, item.equals("Home") ? white : 0xFF9EABC5, item.equals("Home"));
-            tab.setPadding(0, 0, 30, 0);
-            nav.addView(tab);
-        }
+        nav.addView(navAction("Home", () -> buildHome()));
+        nav.addView(navAction("Apps", () -> showLibrary()));
+        nav.addView(navAction("Profiles", () -> showProfiles()));
+        nav.addView(navAction("Control Center", () -> showControlCenter()));
         root.addView(nav);
 
         LinearLayout hero = new LinearLayout(this);
@@ -342,6 +361,23 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(-1, 190);
         hp.bottomMargin = 24;
         root.addView(hero, hp);
+
+        String lastPackage = getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getString("last_opened_package_" + activeProfileId, null);
+        ResolveInfo lastApp = findApp(lastPackage);
+        if (lastApp != null) {
+            TextView continueLabel = text("CONTINUE", 14, 0xFFB9C7DF, true);
+            continueLabel.setLetterSpacing(0.14f);
+            root.addView(continueLabel);
+            HorizontalScrollView continueScroll = new HorizontalScrollView(this);
+            continueScroll.setHorizontalScrollBarEnabled(false);
+            LinearLayout continueRail = new LinearLayout(this);
+            continueRail.setOrientation(LinearLayout.HORIZONTAL);
+            continueRail.setPadding(0, 14, 0, 14);
+            continueRail.addView(appCard(lastApp));
+            continueScroll.addView(continueRail);
+            root.addView(continueScroll, new LinearLayout.LayoutParams(-1, 145));
+        }
 
         if (!favorites.isEmpty()) {
             TextView favoriteLabel = text("FAVORITES", 14, 0xFFB9C7DF, true);
