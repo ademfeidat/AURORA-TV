@@ -31,12 +31,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.UUID;
 
 public class MainActivity extends Activity {
     private final int bg = Color.rgb(8, 13, 27);
     private final int white = Color.WHITE;
     private final List<ResolveInfo> apps = new ArrayList<>();
     private final Set<String> favorites = new HashSet<>();
+    private static final String PREFS = "aurora_launcher";
+    private static final String PROFILES_KEY = "profiles";
+    private static final String ACTIVE_PROFILE_KEY = "active_profile";
+    private String activeProfileId = "guest";
     private LinearLayout root;
     private LinearLayout rail;
     private TextView clock;
@@ -52,6 +57,7 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().setNavigationBarColor(bg);
+        initializeProfiles();
         loadFavorites();
         loadApps();
         buildHome();
@@ -63,15 +69,100 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    private void initializeProfiles() {
+        android.content.SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+        Set<String> ids = new HashSet<>(p.getStringSet(PROFILES_KEY, new HashSet<>()));
+        if (ids.isEmpty()) {
+            ids.add("guest");
+            p.edit().putStringSet(PROFILES_KEY, ids).putString("profile_name_guest", "Guest")
+                    .putString(ACTIVE_PROFILE_KEY, "guest").apply();
+        }
+        activeProfileId = p.getString(ACTIVE_PROFILE_KEY, ids.iterator().next());
+        if (!ids.contains(activeProfileId)) {
+            activeProfileId = ids.iterator().next();
+            p.edit().putString(ACTIVE_PROFILE_KEY, activeProfileId).apply();
+        }
+    }
+
+    private String profileName(String id) {
+        return getSharedPreferences(PREFS, MODE_PRIVATE).getString("profile_name_" + id, "Profile");
+    }
+
     private void loadFavorites() {
         favorites.clear();
-        favorites.addAll(getSharedPreferences("aurora_launcher", MODE_PRIVATE)
-                .getStringSet("favorites", new HashSet<>()));
+        favorites.addAll(getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getStringSet("favorites_" + activeProfileId, new HashSet<>()));
     }
 
     private void saveFavorites() {
-        getSharedPreferences("aurora_launcher", MODE_PRIVATE).edit()
-                .putStringSet("favorites", new HashSet<>(favorites)).apply();
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putStringSet("favorites_" + activeProfileId, new HashSet<>(favorites)).apply();
+    }
+
+    private void showProfiles() {
+        android.content.SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+        Set<String> ids = new HashSet<>(p.getStringSet(PROFILES_KEY, new HashSet<>()));
+        final List<String> profileIds = new ArrayList<>(ids);
+        Collections.sort(profileIds, (a, b) -> profileName(a).compareToIgnoreCase(profileName(b)));
+        String[] names = new String[profileIds.size()];
+        for (int i = 0; i < profileIds.size(); i++) {
+            String id = profileIds.get(i);
+            names[i] = (id.equals(activeProfileId) ? "✓  " : "     ") + profileName(id);
+        }
+        new AlertDialog.Builder(this).setTitle("Choose profile")
+                .setItems(names, (d, which) -> {
+                    String selected = profileIds.get(which);
+                    if (!selected.equals(activeProfileId)) {
+                        activeProfileId = selected;
+                        p.edit().putString(ACTIVE_PROFILE_KEY, activeProfileId).apply();
+                        loadFavorites();
+                        buildHome();
+                    }
+                })
+                .setPositiveButton("Add profile", (d, w) -> showCreateProfile())
+                .setNeutralButton("Delete active", (d, w) -> deleteActiveProfile())
+                .setNegativeButton("Close", null).show();
+    }
+
+    private void showCreateProfile() {
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setHint("Profile name");
+        input.setTextColor(white);
+        input.setHintTextColor(0xFF9EABC5);
+        new AlertDialog.Builder(this).setTitle("New profile").setView(input)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Create", (d, w) -> {
+                    String name = input.getText().toString().trim();
+                    if (name.isEmpty()) name = "Profile";
+                    String id = UUID.randomUUID().toString();
+                    android.content.SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+                    Set<String> ids = new HashSet<>(p.getStringSet(PROFILES_KEY, new HashSet<>()));
+                    ids.add(id);
+                    p.edit().putStringSet(PROFILES_KEY, ids).putString("profile_name_" + id, name)
+                            .putString(ACTIVE_PROFILE_KEY, id).apply();
+                    activeProfileId = id;
+                    loadFavorites();
+                    buildHome();
+                }).show();
+    }
+
+    private void deleteActiveProfile() {
+        android.content.SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+        Set<String> ids = new HashSet<>(p.getStringSet(PROFILES_KEY, new HashSet<>()));
+        if (ids.size() <= 1) {
+            new AlertDialog.Builder(this).setMessage("At least one profile must remain.")
+                    .setPositiveButton("OK", null).show();
+            return;
+        }
+        String removed = activeProfileId;
+        ids.remove(removed);
+        String next = ids.iterator().next();
+        p.edit().putStringSet(PROFILES_KEY, ids).putString(ACTIVE_PROFILE_KEY, next)
+                .remove("profile_name_" + removed).remove("favorites_" + removed).apply();
+        activeProfileId = next;
+        loadFavorites();
+        buildHome();
     }
 
     private void toggleFavorite(ResolveInfo app) {
@@ -138,7 +229,13 @@ public class MainActivity extends Activity {
         top.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
         clock = text("", 15, 0xFFCFD8EA, false);
         top.addView(clock);
-        TextView profile = text("   ●  Guest", 15, 0xFFE2E8F5, false);
+        TextView profile = text("   ●  " + profileName(activeProfileId) + "  ▾", 15, 0xFFE2E8F5, true);
+        profile.setFocusable(true);
+        profile.setPadding(14, 9, 14, 9);
+        profile.setBackground(panel(0xFF263653, 22));
+        profile.setOnClickListener(v -> showProfiles());
+        profile.setOnFocusChangeListener((v, focused) ->
+                v.setBackground(panel(focused ? 0xFF3C5F96 : 0xFF263653, 22)));
         top.addView(profile);
         root.addView(top);
 
@@ -264,8 +361,8 @@ public class MainActivity extends Activity {
         Intent i = new Intent(Intent.ACTION_MAIN);
         i.setClassName(app.activityInfo.packageName, app.activityInfo.name);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getSharedPreferences("aurora_launcher", MODE_PRIVATE).edit()
-                .putString("last_opened_package", app.activityInfo.packageName).apply();
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putString("last_opened_package_" + activeProfileId, app.activityInfo.packageName).apply();
         try { startActivity(i); } catch (Exception ignored) { }
     }
 
