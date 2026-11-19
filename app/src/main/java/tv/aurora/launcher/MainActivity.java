@@ -112,10 +112,20 @@ public class MainActivity extends Activity {
         TextView hint = text("Press any button to continue", 13, 0xFF899AB8, false);
         hint.setPadding(0, 36, 0, 0);
         view.addView(hint);
+        view.setFocusableInTouchMode(true);
+        view.setOnClickListener(v -> dismissScreensaver());
+        view.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                dismissScreensaver();
+                return true;
+            }
+            return true;
+        });
         screensaverDialog = new Dialog(this);
         screensaverDialog.setContentView(view);
         screensaverDialog.setCancelable(false);
         screensaverDialog.show();
+        view.requestFocus();
         if (screensaverDialog.getWindow() != null) {
             screensaverDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             screensaverDialog.getWindow().setLayout(-1, -1);
@@ -125,12 +135,18 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void dismissScreensaver() {
+        if (screensaverDialog != null && screensaverDialog.isShowing()) {
+            screensaverDialog.dismiss();
+            screensaverDialog = null;
+            resetScreensaverTimer();
+        }
+    }
+
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             if (screensaverDialog != null && screensaverDialog.isShowing()) {
-                screensaverDialog.dismiss();
-                screensaverDialog = null;
-                resetScreensaverTimer();
+                dismissScreensaver();
                 return true;
             }
             resetScreensaverTimer();
