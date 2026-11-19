@@ -468,11 +468,9 @@ public class MainActivity extends Activity {
         hp.bottomMargin = 24;
         root.addView(hero, hp);
 
-        String lastPackage = getSharedPreferences(PREFS, MODE_PRIVATE)
-                .getString("last_opened_package_" + activeProfileId, null);
-        ResolveInfo lastApp = findApp(lastPackage);
-        if (lastApp != null) {
-            TextView continueLabel = text("Continue", 20, 0xFFF2F5FC, true);
+        List<ResolveInfo> recentApps = recentApps();
+        if (!recentApps.isEmpty()) {
+            TextView continueLabel = text("Continue Watching", 20, 0xFFF2F5FC, true);
             continueLabel.setLetterSpacing(0.14f);
             root.addView(continueLabel);
             HorizontalScrollView continueScroll = new HorizontalScrollView(this);
@@ -480,7 +478,7 @@ public class MainActivity extends Activity {
             LinearLayout continueRail = new LinearLayout(this);
             continueRail.setOrientation(LinearLayout.HORIZONTAL);
             continueRail.setPadding(0, 14, 0, 14);
-            continueRail.addView(appCard(lastApp));
+            for (ResolveInfo recent : recentApps) continueRail.addView(appCard(recent));
             continueScroll.addView(continueRail);
             root.addView(continueScroll, new LinearLayout.LayoutParams(-1, 145));
         }
@@ -582,13 +580,51 @@ public class MainActivity extends Activity {
         return card;
     }
 
+    private List<ResolveInfo> recentApps() {
+        String key = "recent_apps_" + activeProfileId;
+        String stored = getSharedPreferences(PREFS, MODE_PRIVATE).getString(key, "");
+        List<ResolveInfo> result = new ArrayList<>();
+        if (stored.isEmpty()) {
+            ResolveInfo legacy = findApp(getSharedPreferences(PREFS, MODE_PRIVATE)
+                    .getString("last_opened_package_" + activeProfileId, null));
+            if (legacy != null) result.add(legacy);
+            return result;
+        }
+        for (String pkg : stored.split("\\|")) {
+            ResolveInfo app = findApp(pkg);
+            if (app != null && result.size() < 8) result.add(app);
+        }
+        return result;
+    }
+
+    private void recordRecentApp(String packageName) {
+        List<String> history = new ArrayList<>();
+        history.add(packageName);
+        for (ResolveInfo app : recentApps()) {
+            String pkg = app.activityInfo.packageName;
+            if (!pkg.equals(packageName) && history.size() < 8) history.add(pkg);
+        }
+        StringBuilder stored = new StringBuilder();
+        for (String pkg : history) {
+            if (stored.length() > 0) stored.append("|");
+            stored.append(pkg);
+        }
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putString("last_opened_package_" + activeProfileId, packageName)
+                .putString("recent_apps_" + activeProfileId, stored.toString()).apply();
+    }
+
     private void launch(ResolveInfo app) {
         Intent i = new Intent(Intent.ACTION_MAIN);
         i.setClassName(app.activityInfo.packageName, app.activityInfo.name);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                .putString("last_opened_package_" + activeProfileId, app.activityInfo.packageName).apply();
-        try { startActivity(i); } catch (Exception ignored) { }
+        try {
+            startActivity(i);
+            recordRecentApp(app.activityInfo.packageName);
+        } catch (Exception error) {
+            android.widget.Toast.makeText(this, "Unable to open " +
+                    app.loadLabel(getPackageManager()), android.widget.Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void showFavorites() {
