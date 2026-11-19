@@ -420,12 +420,12 @@ public class MainActivity extends Activity {
 
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        TextView brand = text("AURORA", 22, white, true);
-        brand.setLetterSpacing(0.18f);
+        TextView brand = text("AURORA", 25, white, true);
+        brand.setLetterSpacing(0.24f);
         top.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
-        clock = text("", 15, 0xFFCFD8EA, false);
+        clock = text("", 16, 0xFFE4EAF5, true);
         top.addView(clock);
-        TextView profile = text("   ●  " + profileName(activeProfileId) + "  ▾", 15, 0xFFE2E8F5, true);
+        TextView profile = text("◉  " + profileName(activeProfileId) + "  ▾", 15, 0xFFE2E8F5, true);
         profile.setFocusable(true);
         profile.setPadding(14, 9, 14, 9);
         profile.setBackground(panel(0xFF263653, 22));
@@ -437,7 +437,7 @@ public class MainActivity extends Activity {
 
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
-        nav.setPadding(0, 26, 0, 28);
+        nav.setPadding(0, 22, 0, 30);
         nav.addView(navAction("Watch Now", () -> buildHome()));
         nav.addView(navAction("Apps", () -> showLibrary()));
         nav.addView(navAction("Search", () -> showLibrary()));
@@ -454,14 +454,16 @@ public class MainActivity extends Activity {
         GradientDrawable heroSurface = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 new int[]{0xFF526F9E, selectedTheme[3], selectedTheme[1], 0xFF090F20});
         heroSurface.setCornerRadius(34f);
+        heroSurface.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        heroSurface.setDither(true);
         hero.setBackground(heroSurface);
-        TextView eyebrow = text("  AURORA TV  •  FEATURED", 14, 0xFFE0E9FA, true);
+        TextView eyebrow = text("A U R O R A   O R I G I N A L S     •     FEATURED", 13, 0xFFE0E9FA, true);
         eyebrow.setLetterSpacing(0.15f);
         hero.addView(eyebrow);
         TextView headline = text("The best of entertainment.\nAll in one place.", 36, white, true);
         headline.setPadding(0, 14, 0, 10);
         hero.addView(headline);
-        TextView sub = text("Discover something great to watch.", 19, 0xFFE0E7F3, false);
+        TextView sub = text("Your favourite apps, moments and discoveries.", 18, 0xFFE0E7F3, false);
         hero.addView(sub);
         LinearLayout heroActions = new LinearLayout(this);
         heroActions.setOrientation(LinearLayout.HORIZONTAL);
@@ -469,8 +471,8 @@ public class MainActivity extends Activity {
         heroActions.addView(action("▶  Open App Library", () -> showLibrary()));
         heroActions.addView(action("Profiles", () -> showProfiles()));
         hero.addView(heroActions);
-        LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(-1, 278);
-        hp.bottomMargin = 30;
+        LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(-1, 292);
+        hp.bottomMargin = 26;
         root.addView(hero, hp);
 
         List<ResolveInfo> recentApps = recentApps();
@@ -560,11 +562,11 @@ public class MainActivity extends Activity {
         android.graphics.drawable.Drawable icon = app.loadIcon(getPackageManager());
         android.widget.ImageView image = new android.widget.ImageView(this);
         image.setImageDrawable(icon);
-        card.addView(image, new LinearLayout.LayoutParams(76, 76));
+        card.addView(image, new LinearLayout.LayoutParams(88, 88));
         TextView name = text(app.loadLabel(getPackageManager()).toString(), 15, white, true);
         name.setGravity(Gravity.CENTER);
         name.setMaxLines(1);
-        LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(142, -2);
+        LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(158, -2);
         np.topMargin = 7;
         card.addView(name, np);
         card.setOnClickListener(v -> launch(app));
@@ -580,10 +582,10 @@ public class MainActivity extends Activity {
             return true;
         });
         card.setOnFocusChangeListener((v, focused) -> {
-            v.animate().scaleX(focused ? 1.16f : 1f).scaleY(focused ? 1.16f : 1f).setDuration(160).start();
-            v.setBackground(panel(focused ? 0xFF527BB8 : 0xFF202E49, 24));
+            v.animate().scaleX(focused ? 1.12f : 1f).scaleY(focused ? 1.12f : 1f).setDuration(220).start();
+            v.setBackground(panel(focused ? 0xFF6C91C8 : 0xFF202E49, 26));
         });
-        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(166, 150);
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(184, 166);
         cp.rightMargin = 14;
         card.setLayoutParams(cp);
         return card;
